@@ -2,6 +2,20 @@
   "functions": {
     "source": "functions"
   },
+  "hosting": {
+    "public": "igreja_digital/build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
   "firestore": {
     "rules": "igreja_digital/firestore.rules",
     "indexes": "igreja_digital/firestore.indexes.json"
