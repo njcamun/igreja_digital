@@ -1,0 +1,242 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function hasUserDoc() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return hasUserDoc() && userDoc().data.role == 'admin';
+    }
+
+    function isLeader() {
+      return hasUserDoc() && userDoc().data.role == 'lider';
+    }
+
+    // Helper function to check if user belongs to a specific congregation
+    function belongsTo(congregationId) {
+      return hasUserDoc() && userDoc().data.congregationId == congregationId;
+    }
+
+    function canManageCongregation(congregationId) {
+      return isAdmin() || (isLeader() && belongsTo(congregationId));
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == userId ||
+        isAdmin() ||
+        // Qualquer membro/lider/admin pode ver perfis de outros membros/lider/admin (para estatísticas)
+        (
+          hasUserDoc() &&
+          userDoc().data.role in ['membro', 'lider', 'admin'] &&
+          resource.data.role in ['membro', 'lider', 'admin']
+        ) ||
+        (
+          isLeader() && (
+            (
+              resource.data.role == 'membro' &&
+              resource.data.congregationId == userDoc().data.congregationId
+            ) ||
+            (
+              resource.data.role == 'visitante' && (
+                resource.data.congregationId == userDoc().data.congregationId ||
+                resource.data.congregationId == null ||
+                resource.data.congregationId == '' ||
+                resource.data.congregationId == 'visitor'
+              )
+            )
+          )
+        )
+      );
+
+      allow create: if isSignedIn() &&
+        request.auth.uid == userId &&
+        request.resource.data.role == 'visitante';
+
+      // Admin pode gerir perfil completo, mas membro/líder devem sempre ter congregação válida.
+      allow update: if isAdmin() &&
+        (
+          !(request.resource.data.role in ['membro', 'lider']) ||
+          (
+            request.resource.data.congregationId is string &&
+            request.resource.data.congregationId.size() > 0 &&
+            request.resource.data.congregationId != 'visitor'
+          )
+        );
+
+      // Líder pode gerir utilizadores no seu escopo com regras estritas:
+      // - só membros da sua congregação e visitantes da sua congregação/sem congregação
+      // - só pode alterar perfil de visitante para membro/líder
+      // - só pode definir congregação para a sua própria congregação
+      allow update: if isLeader() &&
+        (
+          (
+            resource.data.role == 'membro' &&
+            resource.data.congregationId == userDoc().data.congregationId
+          ) ||
+          (
+            resource.data.role == 'visitante' && (
+              resource.data.congregationId == userDoc().data.congregationId ||
+              resource.data.congregationId == null ||
+              resource.data.congregationId == '' ||
+              resource.data.congregationId == 'visitor'
+            )
+          )
+        ) &&
+        request.resource.data.email == resource.data.email &&
+        request.resource.data.isActive == resource.data.isActive &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        (
+          request.resource.data.role == resource.data.role ||
+          (
+            resource.data.role == 'visitante' &&
+            request.resource.data.role in ['membro', 'lider']
+          )
+        ) &&
+        (
+          request.resource.data.congregationId == userDoc().data.congregationId ||
+          (
+            request.resource.data.role == 'visitante' && (
+              request.resource.data.congregationId == null ||
+              request.resource.data.congregationId == '' ||
+              request.resource.data.congregationId == 'visitor'
+            )
+          )
+        );
+
+      // Utilizador pode actualizar o seu próprio documento, desde que:
+      //   - não altere isActive (não pode auto-desactivar)
+      //   - role e congregationId obedecçam às regras de negócio
+      allow update: if isSignedIn() && request.auth.uid == userId &&
+        // isActive não pode mudar quando presente no documento
+        (
+          !('isActive' in resource.data) ||
+          request.resource.data.isActive == resource.data.isActive
+        ) &&
+        // role não pode ser alterado pelo próprio utilizador
+        request.resource.data.role == resource.data.role &&
+        // Se role é visitante → pode manter sem congregação ('visitor', null, vazio)
+        // ou selecionar uma congregação específica sem alterar o papel
+        // Se role é membro/lider → congregationId deve ser string não vazia e != 'visitor'
+        // Caso contrário (admin/lider) → congregationId livre
+        (
+          !(request.resource.data.role in ['visitante', 'membro', 'lider']) ||
+          (
+            request.resource.data.role == 'visitante' &&
+            (
+              !('congregationId' in request.resource.data) ||
+              request.resource.data.congregationId == null ||
+              request.resource.data.congregationId == '' ||
+              request.resource.data.congregationId is string
+            )
+          ) ||
+          (
+            request.resource.data.role in ['membro', 'lider'] &&
+            request.resource.data.congregationId is string &&
+            request.resource.data.congregationId.size() > 0 &&
+            request.resource.data.congregationId != 'visitor'
+          )
+        );
+    }
+
+    // Congregations Collection
+    match /congregations/{congregationId} {
+      allow read: if true; // Everyone can see congregations
+      allow create: if request.auth != null && (isAdmin() || isLeader());
+      allow update: if request.auth != null && (isAdmin() || isLeader());
+      allow delete: if request.auth != null && isAdmin();
+    }
+
+    // Events Collection
+    match /events/{eventId} {
+      allow read: if true;
+      allow create: if isSignedIn() && canManageCongregation(request.resource.data.congregationId);
+      allow update: if isSignedIn() && canManageCongregation(request.resource.data.congregationId);
+      allow delete: if isSignedIn() && canManageCongregation(resource.data.congregationId);
+    }
+
+    // Sermons Collection
+    match /sermons/{sermonId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        canManageCongregation(resource.data.congregationId) ||
+        (
+          hasUserDoc() && userDoc().data.role == 'visitante' &&
+          resource.data.isPublished == true
+        ) ||
+        (
+          hasUserDoc() && userDoc().data.role == 'membro' &&
+          resource.data.isPublished == true &&
+          belongsTo(resource.data.congregationId)
+        )
+      );
+      allow create: if isSignedIn() && canManageCongregation(request.resource.data.congregationId);
+      allow update: if isSignedIn() && canManageCongregation(request.resource.data.congregationId);
+      allow delete: if isSignedIn() && canManageCongregation(resource.data.congregationId);
+    }
+
+    // Prayer Requests Collection
+    match /prayer_requests/{prayerId} {
+      allow read: if request.auth != null && (
+        resource.data.isPublic == true ||
+        resource.data.userId == request.auth.uid ||
+        (belongsTo(resource.data.congregationId) && resource.data.isPrivate == true) ||
+        isAdmin()
+      );
+      allow create: if isSignedIn() &&
+        hasUserDoc() && userDoc().data.role in ['visitante', 'membro', 'lider', 'admin'] &&
+        request.auth.uid == request.resource.data.userId &&
+        request.resource.data.keys().hasAll([
+          'title', 'content', 'userId', 'userName', 'isAnonymous', 'isPrivate', 'isPublic',
+          'status', 'prayerCount', 'prayedByUserIds', 'createdAt', 'updatedAt', 'isActive'
+        ]) &&
+        request.resource.data.status in ['open', 'praying', 'answered', 'archived'] &&
+        request.resource.data.prayerCount == 0 &&
+        request.resource.data.prayedByUserIds.size() == 0 &&
+        request.resource.data.isActive == true;
+      allow update: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        isAdmin() ||
+        (isLeader() && belongsTo(resource.data.congregationId)) ||
+        (
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['prayerCount', 'prayedByUserIds', 'updatedAt', 'status']) &&
+          request.resource.data.prayerCount == resource.data.prayerCount + 1 &&
+          request.resource.data.prayedByUserIds.hasAll(resource.data.prayedByUserIds) &&
+          request.resource.data.prayedByUserIds.size() == resource.data.prayedByUserIds.size() + 1 &&
+          request.resource.data.prayedByUserIds.hasAny([request.auth.uid]) &&
+          (
+            request.resource.data.status == resource.data.status ||
+            (
+              resource.data.status == 'open' &&
+              request.resource.data.status == 'praying'
+            )
+          )
+        )
+      );
+      allow delete: if request.auth != null && isAdmin();
+    }
+
+    // Announcements Collection
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow create: if isSignedIn() && canManageCongregation(request.resource.data.congregationId);
+      allow update: if isSignedIn() && canManageCongregation(request.resource.data.congregationId);
+      allow delete: if isSignedIn() && canManageCongregation(resource.data.congregationId);
+    }
+  }
+}

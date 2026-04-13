@@ -1,0 +1,39 @@
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Root build artifacts
+build/
+
+# Flutter project artifacts (nested in igreja_digital/)
+igreja_digital/.dart_tool/
+igreja_digital/.packages
+igreja_digital/.flutter-plugins
+igreja_digital/.flutter-plugins-dependencies
+igreja_digital/.pub/
+igreja_digital/.pub-cache/
+igreja_digital/build/
+igreja_digital/coverage/
+igreja_digital/**/generated_plugin_registrant.dart
+
+# Flutter platform generated files
+igreja_digital/android/.gradle/
+igreja_digital/android/local.properties
+igreja_digital/ios/Flutter/Flutter.podspec
+igreja_digital/ios/Flutter/Generated.xcconfig
+igreja_digital/ios/Flutter/flutter_export_environment.sh
+
+# Firebase Functions / Node
+functions/node_modules/
+functions/.firebase/
+functions/lib/
+functions/npm-debug.log*
+functions/yarn-debug.log*
+functions/yarn-error.log*
+
+# Logs
+*.log

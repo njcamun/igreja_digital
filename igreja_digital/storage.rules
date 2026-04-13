@@ -1,0 +1,44 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid));
+    }
+
+    function isAdmin() {
+      return isSignedIn() && userDoc().data.role == 'admin';
+    }
+
+    function isLeader() {
+      return isSignedIn() && userDoc().data.role == 'lider';
+    }
+
+    function belongsTo(congregationId) {
+      return isSignedIn() && userDoc().data.congregationId == congregationId;
+    }
+
+    match /sermons/{congregationId}/{fileName} {
+      allow read: if isSignedIn() && (isAdmin() || belongsTo(congregationId));
+      allow write: if isSignedIn() && (isAdmin() || (isLeader() && belongsTo(congregationId)));
+    }
+
+    // Legacy path compatibility for old uploaded files without congregation scope.
+    match /sermons/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isAdmin();
+    }
+
+    match /congregations/{congregationId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && (isAdmin() || isLeader());
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

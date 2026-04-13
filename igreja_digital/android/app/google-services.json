@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "755775079358",
+    "project_id": "igreja-digita",
+    "storage_bucket": "igreja-digita.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:755775079358:android:ef043762b2402eb7662fef",
+        "android_client_info": {
+          "package_name": "com.igreja.igreja_digital"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "755775079358-55sevp2kie34vtk60p9p7ida684rfa0v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.igreja.igreja_digital",
+            "certificate_hash": "b917c8760283d077a05ae74124ed78fe1fd78116"
+          }
+        },
+        {
+          "client_id": "755775079358-9cr5qg25luh0totvshegr7io5n88p8o0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApX8IT_cbirIjjM94avZTgBuwLih8kE_4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "755775079358-9cr5qg25luh0totvshegr7io5n88p8o0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

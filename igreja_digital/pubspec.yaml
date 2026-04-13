@@ -1,0 +1,80 @@
+name: igreja_digital
+description: "Aplicação completa para gestão e comunicação de actividades de uma igreja."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Firebase
+  firebase_core: ^3.1.0
+  firebase_auth: ^5.1.0
+  cloud_firestore: ^5.0.1
+  firebase_storage: ^12.0.1
+  firebase_messaging: ^15.0.1
+  google_sign_in: ^6.2.1
+
+  # Maps & Location
+  google_maps_flutter: ^2.7.0
+  geolocator: ^12.0.0
+  geocoding: ^3.0.0
+
+  # UI & Utils
+  intl: ^0.20.2
+  uuid: ^4.4.0
+  cached_network_image: ^3.3.1
+  url_launcher: ^6.3.0
+  share_plus: ^10.0.2
+  font_awesome_flutter: ^10.7.0
+  shared_preferences: ^2.3.2
+  
+  # Media
+  just_audio: ^0.9.38
+  video_player: ^2.9.2
+  youtube_player_iframe: ^5.2.0
+  audio_video_progress_bar: ^2.0.3
+  image_picker: ^1.1.2
+  file_picker: ^8.0.3
+  record: ^6.1.0
+  path_provider: ^2.1.3
+  
+  # Notifications
+  flutter_local_notifications: ^17.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.9
+  riverpod_generator: ^2.4.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: assets/logo.png
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
+  image_path: assets/logo.png
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - assets/

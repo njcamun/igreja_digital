@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "source": "functions"
+  },
+  "firestore": {
+    "rules": "igreja_digital/firestore.rules",
+    "indexes": "igreja_digital/firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "igreja_digital/storage.rules"
+  }
+}
