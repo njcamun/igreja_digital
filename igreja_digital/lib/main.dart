@@ -36,9 +36,13 @@ void main() async {
     _backgroundHandlerRegistered = true;
   }
 
-  FirebaseFirestore.instance.settings = const Settings(
-    persistenceEnabled: true,
-  );
+  try {
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+    );
+  } catch (e) {
+    debugPrint('Falha ao ativar persistencia Firestore: $e');
+  }
   runApp(const ProviderScope(child: MyApp()));
 }
 

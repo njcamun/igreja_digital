@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -24,6 +25,10 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
 
 // Provider para inicializar notificações quando o usuário está logado
 final notificationInitializerProvider = Provider<void>((ref) {
+  if (kIsWeb) {
+    return;
+  }
+
   ref.listen<UserEntity?>(currentUserProvider, (previous, next) {
     final notificationService = ref.read(notificationServiceProvider);
 
@@ -35,7 +40,9 @@ final notificationInitializerProvider = Provider<void>((ref) {
 
     if (next != null && next.role != UserRole.visitante) {
       if (!notificationService.isInitialized || previous?.uid != next.uid) {
-        notificationService.initialize(next.uid);
+        notificationService.initialize(next.uid).catchError((_) {
+          // Mantém a app funcional mesmo se o provider de notificações falhar.
+        });
       }
 
       final previousCongregationId = previous?.congregationId;
