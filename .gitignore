@@ -8,6 +8,7 @@ Thumbs.db
 
 # Root build artifacts
 build/
+.firebase/
 
 # Flutter project artifacts (nested in igreja_digital/)
 igreja_digital/.dart_tool/
