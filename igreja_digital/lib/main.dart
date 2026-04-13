@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'presentation/providers/auth_provider.dart';
@@ -11,12 +12,26 @@ import 'presentation/services/notification_service.dart';
 // Flag para evitar registro duplicado do handler em background
 bool _backgroundHandlerRegistered = false;
 
+const FirebaseOptions _webFirebaseOptions = FirebaseOptions(
+  apiKey: 'AIzaSyC9KEUXB4a4JLi3uG0RJsbBEGMov1zsHi0',
+  appId: '1:755775079358:web:a10b598c6e811ed8662fef',
+  messagingSenderId: '755775079358',
+  projectId: 'igreja-digita',
+  authDomain: 'igreja-digita.firebaseapp.com',
+  storageBucket: 'igreja-digita.firebasestorage.app',
+  measurementId: 'G-ETKB51X5VG',
+);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  if (kIsWeb) {
+    await Firebase.initializeApp(options: _webFirebaseOptions);
+  } else {
+    await Firebase.initializeApp();
+  }
 
   // Registrar handler de mensagens em background apenas uma vez
-  if (!_backgroundHandlerRegistered) {
+  if (!kIsWeb && !_backgroundHandlerRegistered) {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     _backgroundHandlerRegistered = true;
   }
